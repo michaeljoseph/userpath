@@ -27,30 +27,43 @@ def userpath():
     pass
 
 
+def common_options(function):
+    options = [
+        click.argument('locations', required=True, nargs=-1),
+        click.option(
+            '-s',
+            '--shell',
+            'shells',
+            multiple=True,
+            type=click.Choice(sorted(SHELLS)),
+            help=(
+                'The shell in which PATH will be modified. This can be selected multiple times and has no '
+                'effect on Windows. The default shells are: {}'.format(', '.join(sorted(DEFAULT_SHELLS)))
+            ),
+        ),
+        click.option(
+            '-a',
+            '--all-shells',
+            is_flag=True,
+            help=(
+                'Update PATH of all supported shells. This has no effect on Windows as environment settings are already global.'
+            ),
+        ),
+        click.option('--home', help='Explicitly set the home directory.'),
+        click.option('-q', '--quiet', is_flag=True, help='Suppress output for successful invocations.'),
+    ]
+
+    if function.__name__ != 'verify':
+        function = click.option('-f', '--force', is_flag=True, help='Update PATH even if it appears to be correct.')(function)
+
+    for option in reversed(options):
+        function = option(function)
+
+    return function
+
+
 @userpath.command(context_settings=CONTEXT_SETTINGS, short_help='Prepends to the user PATH')
-@click.argument('locations', required=True, nargs=-1)
-@click.option(
-    '-s',
-    '--shell',
-    'shells',
-    multiple=True,
-    type=click.Choice(sorted(SHELLS)),
-    help=(
-        'The shell in which PATH will be modified. This can be selected multiple times and has no '
-        'effect on Windows. The default shells are: {}'.format(', '.join(sorted(DEFAULT_SHELLS)))
-    ),
-)
-@click.option(
-    '-a',
-    '--all-shells',
-    is_flag=True,
-    help=(
-        'Update PATH of all supported shells. This has no effect on Windows as environment settings are already global.'
-    ),
-)
-@click.option('--home', help='Explicitly set the home directory.')
-@click.option('-f', '--force', is_flag=True, help='Update PATH even if it appears to be correct.')
-@click.option('-q', '--quiet', is_flag=True, help='Suppress output for successful invocations.')
+@common_options
 def prepend(locations, shells, all_shells, home, force, quiet):
     """Prepends to the user PATH. The shell must be restarted for the update to
     take effect.
@@ -83,29 +96,7 @@ def prepend(locations, shells, all_shells, home, force, quiet):
 
 
 @userpath.command(context_settings=CONTEXT_SETTINGS, short_help='Appends to the user PATH')
-@click.argument('locations', required=True, nargs=-1)
-@click.option(
-    '-s',
-    '--shell',
-    'shells',
-    multiple=True,
-    type=click.Choice(sorted(SHELLS)),
-    help=(
-        'The shell in which PATH will be modified. This can be selected multiple times and has no '
-        'effect on Windows. The default shells are: {}'.format(', '.join(sorted(DEFAULT_SHELLS)))
-    ),
-)
-@click.option(
-    '-a',
-    '--all-shells',
-    is_flag=True,
-    help=(
-        'Update PATH of all supported shells. This has no effect on Windows as environment settings are already global.'
-    ),
-)
-@click.option('--home', help='Explicitly set the home directory.')
-@click.option('-f', '--force', is_flag=True, help='Update PATH even if it appears to be correct.')
-@click.option('-q', '--quiet', is_flag=True, help='Suppress output for successful invocations.')
+@common_options
 def append(locations, shells, all_shells, home, force, quiet):
     """Appends to the user PATH. The shell must be restarted for the update to
     take effect.
@@ -138,28 +129,7 @@ def append(locations, shells, all_shells, home, force, quiet):
 
 
 @userpath.command(context_settings=CONTEXT_SETTINGS, short_help='Checks if locations are in the user PATH')
-@click.argument('locations', required=True, nargs=-1)
-@click.option(
-    '-s',
-    '--shell',
-    'shells',
-    multiple=True,
-    type=click.Choice(sorted(SHELLS)),
-    help=(
-        'The shell in which PATH will be modified. This can be selected multiple times and has no '
-        'effect on Windows. The default shells are: {}'.format(', '.join(sorted(DEFAULT_SHELLS)))
-    ),
-)
-@click.option(
-    '-a',
-    '--all-shells',
-    is_flag=True,
-    help=(
-        'Update PATH of all supported shells. This has no effect on Windows as environment settings are already global.'
-    ),
-)
-@click.option('--home', help='Explicitly set the home directory.')
-@click.option('-q', '--quiet', is_flag=True, help='Suppress output for successful invocations.')
+@common_options
 def verify(locations, shells, all_shells, home, quiet):
     """Checks if locations are in the user PATH."""
     for location in locations:
